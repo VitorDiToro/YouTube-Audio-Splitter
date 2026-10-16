@@ -7,6 +7,8 @@ Downloads audio from YouTube videos and splits them into separate tracks
 import os
 import re
 import sys
+import shutil
+from importlib.util import find_spec
 from pathlib import Path
 from typing import List, Tuple
 import yt_dlp
@@ -101,11 +103,33 @@ def parse_tracklist(filename: str) -> List[Tuple[int, str]]:
     return tracks
 
 
+def youtube_runtime_options() -> dict:
+    """Enable installed JS runtimes required for YouTube challenge solving."""
+    if find_spec('yt_dlp_ejs') is None:
+        raise RuntimeError(
+            'Missing YouTube challenge solver. Run: '
+            'python -m pip install --upgrade "yt-dlp[default]"'
+        )
+    runtimes = {}
+    for name in ('deno', 'node'):
+        executable = shutil.which(name)
+        if executable:
+            runtimes[name] = {'path': executable}
+    if not runtimes:
+        raise RuntimeError(
+            'YouTube requires Deno >= 2.3.0 or Node.js >= 22. '
+            'Install one, add it to PATH, and reopen your terminal.'
+        )
+    return {'js_runtimes': runtimes}
+
+
 def download_audio(url: str, output_path: str = "audio_temp", quality: str = "320") -> str:
     """
     Downloads audio from YouTube using yt-dlp (ONLY ONCE)
     Returns the path of the downloaded file
     """
+    runtime_options = youtube_runtime_options()
+
     # Clean up any existing temporary file
     temp_files = [f"{output_path}.mp3", f"{output_path}.webm", f"{output_path}.m4a"]
     for temp_file in temp_files:
@@ -114,6 +138,8 @@ def download_audio(url: str, output_path: str = "audio_temp", quality: str = "32
             os.remove(temp_file)
     
     ydl_opts = {
+        **runtime_options,
+        'noplaylist': True,
         'format': 'bestaudio/best',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
@@ -137,8 +163,15 @@ def download_audio(url: str, output_path: str = "audio_temp", quality: str = "32
             info = ydl.extract_info(url, download=True)
             video_title = info.get('title', 'Unknown')
             print(f"\nVideo title: {video_title}")
-    except Exception as e:
-        raise Exception(f"Failed to download audio: {str(e)}")
+    except yt_dlp.utils.DownloadError as e:
+        raise RuntimeError(
+            f'Failed to download audio: {e}\n'
+            'First update the YouTube extractor and challenge solver: '
+            'python -m pip install --upgrade "yt-dlp[default]"\n'
+            'Also verify Deno >= 2.3.0 or Node.js >= 22 is on PATH. '
+            'Browser playback alone does not guarantee download access; '
+            'if HTTP 403 persists, YouTube may require authentication or restrict your network.'
+        ) from e
     
     # The file will be saved as output_path.mp3
     audio_file = f"{output_path}.mp3"

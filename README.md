@@ -1,6 +1,6 @@
 # 🎵 YouTube Audio Splitter
 
-[![Python](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
+[![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![yt-dlp](https://img.shields.io/badge/yt--dlp-latest-red.svg)](https://github.com/yt-dlp/yt-dlp)
 
@@ -18,7 +18,8 @@
 
 ## 📋 Requirements
 
-- Python 3.7+
+- Python 3.10+
+- Deno >= 2.3.0 or Node.js >= 22 (on PATH)
 - FFmpeg
 - yt-dlp
 - pydub
@@ -33,13 +34,33 @@
 
 2. Install Python dependencies:
     ```bash
-    pip install -r requirements.txt
+    python -m pip install --upgrade -r requirements.txt
     ```
 
 3. Install FFmpeg:
 - **Windows**: Download from [FFmpeg website](https://www.gyan.dev/ffmpeg/builds/) or use [Chocolatey](https://chocolatey.org/install) to install: `choco install ffmpeg`
 - **macOS**: `brew install ffmpeg`
 - **Linux**: `sudo apt install ffmpeg`
+
+4. Install [Node.js](https://nodejs.org/en/download/) (version 22 or newer) or
+   [Deno](https://docs.deno.com/runtime/getting_started/installation/) (2.3.0 or newer),
+   then reopen your terminal. The script automatically enables installed Deno and
+   Node.js runtimes. Python dependencies include the matching EJS challenge solver.
+
+### YouTube HTTP 403 / JavaScript runtime warning
+
+YouTube extraction requires a JavaScript runtime and EJS challenge scripts, even
+when the video plays in a browser. Update both yt-dlp and its dependencies:
+
+```bash
+python -m pip install --upgrade -r requirements.txt
+node --version
+```
+
+If using Deno instead, check `deno --version`. See the official
+[yt-dlp EJS setup guide](https://github.com/yt-dlp/yt-dlp/wiki/EJS).
+If 403 persists with the current extractor and supported runtime, authentication
+or network restrictions may also be involved; a runtime fix cannot resolve every 403.
 
 ## 📖 Usage
 
